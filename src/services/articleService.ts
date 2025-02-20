@@ -22,7 +22,7 @@ export class ArticleService {
   private getProcessor(domain: string, url: string) {
     switch (domain) {
       case "www.cnbeta.com.tw":
-        return new CNBetaArticleProcessor(url);
+        return new CNBetaArticleProcessor(url, true);
       case "news.mydrivers.com":
         return new MyDriversArticleProcessor(url);
       default:
