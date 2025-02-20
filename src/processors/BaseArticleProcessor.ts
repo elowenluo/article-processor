@@ -89,7 +89,6 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
   abstract parseSource(): string;
 
   // TODO Implement the following methods
-  // abstract generateSummary(): Promise<string>;
   // abstract generateCategories(): Promise<string[]>;
 
   async getHtml(url: string): Promise<string> {

@@ -5,7 +5,4 @@ export interface IArticleHandler {
   parseTitle(): string;
   parseContent(): string;
   parseSource(): string;
-  // generateSummary(): Promise<string>;
-  // generateTags(): Promise<string[]>;
-  // generateCategories(): Promise<string[]>;
 }
