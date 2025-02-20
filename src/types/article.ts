@@ -5,3 +5,9 @@ export interface ArticleResponse {
   tags: string;
   categories: string[];
 }
+
+export interface LLMApiConfig {
+  model: string;
+  apiKey: string;
+  url: string;
+}

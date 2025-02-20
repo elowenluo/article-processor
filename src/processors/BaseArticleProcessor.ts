@@ -1,9 +1,11 @@
 import { ArticleResponse } from "../types/article";
 import { IArticleHandler } from "../interfaces/IArticleHandler";
+import { LLMApiConfig } from "../types/article";
 import { IFrame } from "sanitize-html";
 import { AxiosInstance } from "axios";
 import { load } from "cheerio";
 import { launch } from "puppeteer";
+import { AiService } from "../services/aiService";
 import sanitize from "sanitize-html";
 import axios from "axios";
 import sharp from "sharp";
@@ -16,24 +18,34 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "http://localhost";
 
+const aiService = new AiService();
+
 export abstract class BaseArticleProcessor implements IArticleHandler {
   protected url: string;
+  protected axiosInstance: AxiosInstance;
+  protected needDownloadImages: boolean;
+  protected llmApiConfig?: LLMApiConfig;
   protected $!: cheerio.Root;
   protected html!: string;
-  protected needDownloadImages!: boolean;
-  protected axiosInstance: AxiosInstance;
 
-  constructor(url: string, needDownloadImages?: boolean) {
+  constructor(
+    url: string,
+    llmApiConfig?: LLMApiConfig,
+    needDownloadImages?: boolean
+  ) {
     this.url = url;
     this.needDownloadImages = needDownloadImages || false;
 
-    // 创建配置了 SSL 验证选项的 axios 实例
+    if (llmApiConfig) {
+      this.llmApiConfig = llmApiConfig;
+    }
+
     this.axiosInstance = axios.create({
       httpsAgent: new https.Agent({
-        rejectUnauthorized: false, // 允许自签名证书
+        rejectUnauthorized: false,
       }),
-      timeout: 10000, // 10 秒超时
-      maxContentLength: 20 * 1024 * 1024, // 20MB 最大下载限制
+      timeout: 10000,
+      maxContentLength: 20 * 1024 * 1024,
     });
   }
 
@@ -52,18 +64,22 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
         /\n/g,
         ""
       );
-    // const summary = await this.generateSummary();
-    // const tags = await this.generateTags();
-    // const categories = await this.generateCategories();
-    const summary = "";
-    const tags: string[] = [];
-    const categories: string[] = [];
+
+    let tags: string[] = [];
+    let summary = "";
+    let categories: string[] = [];
+
+    if (this.llmApiConfig) {
+      //  summary = await this.generateSummary();
+      tags = await this.generateTags(mainContent);
+      //  categories = await this.generateCategories();
+    }
 
     return {
       title,
       content,
       summary,
-      tags: tags.join(","),
+      tags: tags.join("、"),
       categories,
     };
   }
@@ -205,5 +221,38 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       console.error(`Failed to download image from ${src}: ${error}`);
       return src;
     }
+  }
+
+  async generateTags(article: string): Promise<string[]> {
+    const prompt = `你是文章标签分析助手，请按以下规则生成标签：
+                    数量规则：
+                    - 短文(<1000字): 3-5个
+                    - 中长文(1000-3000字): 4-6个 
+                    - 长文(>3000字): 5-8个
+
+                    排序规则：
+                    1. 首位为核心主题标签
+                    2. 次位为主要领域标签
+                    3. 后续按相关度排序
+
+                    标签要求：
+                    - 使用热门、常用、读者熟悉的标签
+                    - 禁用过于宽泛、过长(>10字)、重复、生僻术语的标签
+                    - 中文加#号
+                    - 避免特殊字符(下划线除外)
+
+                    示例：
+                    文章:《MacBook Pro M3评测》
+                    标签: #MacBookPro #M3芯片 #苹果笔记本 #科技评测 #性能测试
+
+                    请直接返回标签序列,不要包含任何其他文字、符号或说明。`;
+
+    if (!this.llmApiConfig) {
+      throw new Error("LLM API config not provided");
+    }
+
+    const response = await aiService.chat(`${prompt}---${article}`, this.llmApiConfig);
+
+    return response.split("#").map(tag => tag.trim()).filter(tag => tag !== "");
   }
 }

@@ -1,30 +1,41 @@
 import { ArticleResponse } from "../types/article";
 import { CNBetaArticleProcessor } from "../processors/CNBetaArticleProcessor";
 import { MyDriversArticleProcessor } from "../processors/MyDriversArticleProcessor";
+import { LLMApiConfig } from "../types/article";
 
 export class ArticleService {
-  async processUrls(urls: string[]): Promise<ArticleResponse[]> {
+  async processUrls(
+    urls: string[],
+    llmApiConfig: LLMApiConfig
+  ): Promise<ArticleResponse[]> {
     const results = await Promise.all(
-      urls.map(async url => this.processUrl(url))
+      urls.map(async url => this.processUrl(url, llmApiConfig))
     );
 
     return results;
   }
 
-  private async processUrl(url: string): Promise<ArticleResponse> {
+  private async processUrl(
+    url: string,
+    llmApiConfig: LLMApiConfig
+  ): Promise<ArticleResponse> {
     const domain = new URL(url).hostname;
-    const processor = this.getProcessor(domain, url);
+    const processor = this.getProcessor(domain, url, llmApiConfig);
     const article = await processor.processArticle(url);
 
     return article;
   }
 
-  private getProcessor(domain: string, url: string) {
+  private getProcessor(
+    domain: string,
+    url: string,
+    llmApiConfig?: LLMApiConfig
+  ) {
     switch (domain) {
       case "www.cnbeta.com.tw":
-        return new CNBetaArticleProcessor(url, true);
+        return new CNBetaArticleProcessor(url, llmApiConfig, true);
       case "news.mydrivers.com":
-        return new MyDriversArticleProcessor(url);
+        return new MyDriversArticleProcessor(url, llmApiConfig);
       default:
         throw new Error(`No processor found for domain: ${domain}`);
     }

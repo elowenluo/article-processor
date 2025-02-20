@@ -8,14 +8,14 @@ export const processArticles = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { urls } = req.body;
+    const { urls, llmApiConfig } = req.body;
 
     if (!Array.isArray(urls)) {
       res.status(400).json({ error: "URLs must be provided as an array" });
       return;
     }
 
-    const results = await articleService.processUrls(urls);
+    const results = await articleService.processUrls(urls, llmApiConfig);
     res.json(results);
   } catch (error) {
     console.error("Error processing articles:", error);
