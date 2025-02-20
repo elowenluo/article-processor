@@ -70,7 +70,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
     let categories: string[] = [];
 
     if (this.llmApiConfig) {
-      //  summary = await this.generateSummary();
+      summary = await this.generateSummary(mainContent);
       tags = await this.generateTags(mainContent);
       //  categories = await this.generateCategories();
     }
@@ -90,7 +90,6 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
 
   // TODO Implement the following methods
   // abstract generateSummary(): Promise<string>;
-  // abstract generateTags(): Promise<string[]>;
   // abstract generateCategories(): Promise<string[]>;
 
   async getHtml(url: string): Promise<string> {
@@ -251,8 +250,38 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       throw new Error("LLM API config not provided");
     }
 
-    const response = await aiService.chat(`${prompt}---${article}`, this.llmApiConfig);
+    const response = await aiService.chat(
+      `${prompt}---${article}`,
+      this.llmApiConfig
+    );
 
-    return response.split("#").map(tag => tag.trim()).filter(tag => tag !== "");
+    return response
+      .split("#")
+      .map(tag => tag.trim())
+      .filter(tag => tag !== "");
+  }
+
+  async generateSummary(article: string): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    const prompt = `请你总结这篇文章，要求：
+                    1.字数严格控制在 100-120 字；
+                    2.重点利用文章中的数据，使其更有说服力；
+                    3.不要使用吸引眼球的夸张语法，理性叙事总结；
+                    4.如果有，请注明这篇文章的来源、研究团队等，并将其放置于摘要的开头；
+                    5.不要出现“这篇文章”等字眼；
+                    6.不用加“摘要：”、“文章摘要：等词语，直接返回摘要，无需提示其为摘要”；
+                    7.不要出现文章未提及的内容及数据;
+                    8.如果没有明确指出，当前年份为${currentYear}年。`;
+
+    if (!this.llmApiConfig) {
+      throw new Error("LLM API config not provided");
+    }
+
+    const response = await aiService.chat(
+      `${prompt}---${article}`,
+      this.llmApiConfig
+    );
+
+    return response;
   }
 }
