@@ -55,20 +55,20 @@ cp .env.example .env
 2. Configure required environment variables 
 
 ```bash
-# 服务器访问地址，用于生成图片URL
+# Server access address for generating image URLs
 HOST=http://localhost
 
-# 服务运行端口
+# Service port
 PORT=3000
 ```
 
 ### Running
 
 ```bash
-# 开发环境
+# Development environment
 npm run dev
 
-# 生产环境
+# Production environment
 npm run build
 npm start
 ```
