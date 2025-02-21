@@ -2,7 +2,7 @@
 
 **[English](README.md)** | [简体中文](README_zh-CN.md)
 
-Article Processor is a tool for article content reproduction and processing. It can automatically handles article formatting, localizes image resources, and use AI to generate summaries and tags.
+Article Processor is a tool for article content reproduction and processing. It can automatically handles article formatting, localizes image resources, and use AI to generate summaries, categories and tags.
 
 ## Feature
 
@@ -110,7 +110,7 @@ Example response:
 
 ## Todo
 
-- [ ] AI Categorization
+- [ ] RetryError Retry Mechanism
 
 ## License
 

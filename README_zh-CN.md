@@ -2,7 +2,7 @@
 
 [English](README.md) | **[简体中文](README_zh-CN.md)**
 
-Article Processor 是一个用于文章转载处理的工具，它能自动处理文章格式、本地化图片资源，并通过 AI 生成摘要、标签。
+Article Processor 是一个用于文章转载处理的工具，它能自动处理文章格式、本地化图片资源，并通过 AI 生成摘要、分类和标签。
 
 ## 功能特性
 
@@ -107,7 +107,7 @@ curl -X POST http://localhost:3000/process \
 
 ## 待完成功能
 
-- [ ] AI 分类
+- [ ] 错误重试机制
 
 ## 开源协议
 
