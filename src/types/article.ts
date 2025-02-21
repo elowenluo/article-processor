@@ -9,7 +9,7 @@ export interface ArticleResponse {
 export interface LLMApiConfig {
   model: string;
   apiKey: string;
-  url: string;
+  url?: string;
 }
 
 export interface Category {
