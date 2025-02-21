@@ -60,7 +60,6 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
     this.$ = load(this.html);
 
     const title = this.parseTitle();
-    const mainContent = await this.processImages(
       this.formatHtml(this.parseContent())
     );
     const source = this.parseSource();
@@ -89,7 +88,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
 
   async getHtml(url: string): Promise<string> {
     try {
-      const browser = await launch();
+      const browser = await launch({headless: true});
       const page = await browser.newPage();
       await page.goto(url);
 
