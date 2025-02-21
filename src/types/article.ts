@@ -11,3 +11,8 @@ export interface LLMApiConfig {
   apiKey: string;
   url: string;
 }
+
+export interface Category {
+  name: string;
+  children: Category[];
+}

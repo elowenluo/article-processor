@@ -6,6 +6,11 @@ import { AxiosInstance } from "axios";
 import { load } from "cheerio";
 import { launch } from "puppeteer";
 import { AiService } from "../services/aiService";
+import {
+  INSTITUTION_PATTERNS,
+  CATEGORIES,
+  categoriesToString,
+} from "../config/categoryConfig";
 import sanitize from "sanitize-html";
 import axios from "axios";
 import sharp from "sharp";
@@ -65,15 +70,9 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
         ""
       );
 
-    let tags: string[] = [];
-    let summary = "";
-    let categories: string[] = [];
-
-    if (this.llmApiConfig) {
-      summary = await this.generateSummary(mainContent);
-      tags = await this.generateTags(mainContent);
-      //  categories = await this.generateCategories();
-    }
+    const summary = await this.generateSummary(mainContent);
+    const tags = await this.generateTags(mainContent);
+    const categories = await this.generateCategories(mainContent);
 
     return {
       title,
@@ -87,9 +86,6 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
   abstract parseTitle(): string;
   abstract parseContent(): string;
   abstract parseSource(): string;
-
-  // TODO Implement the following methods
-  // abstract generateCategories(): Promise<string[]>;
 
   async getHtml(url: string): Promise<string> {
     try {
@@ -222,6 +218,10 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
   }
 
   async generateTags(article: string): Promise<string[]> {
+    if (!this.llmApiConfig) {
+      return [];
+    }
+
     const prompt = `你是文章标签分析助手，请按以下规则生成标签：
                     数量规则：
                     - 短文(<1000字): 3-5个
@@ -245,12 +245,8 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
 
                     请直接返回标签序列,不要包含任何其他文字、符号或说明。`;
 
-    if (!this.llmApiConfig) {
-      throw new Error("LLM API config not provided");
-    }
-
     const response = await aiService.chat(
-      `${prompt}---${article}`,
+      `${prompt}\n---\n${article}`,
       this.llmApiConfig
     );
 
@@ -261,6 +257,10 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
   }
 
   async generateSummary(article: string): Promise<string> {
+    if (!this.llmApiConfig) {
+      return "";
+    }
+
     const currentYear = new Date().getFullYear();
     const prompt = `请你总结这篇文章，要求：
                     1.字数严格控制在 100-120 字；
@@ -272,15 +272,53 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
                     7.不要出现文章未提及的内容及数据;
                     8.如果没有明确指出，当前年份为${currentYear}年。`;
 
-    if (!this.llmApiConfig) {
-      throw new Error("LLM API config not provided");
-    }
-
     const response = await aiService.chat(
-      `${prompt}---${article}`,
+      `${prompt}\n---\n${article}`,
       this.llmApiConfig
     );
 
     return response;
+  }
+
+  async generateCategories(article: string): Promise<string[]> {
+    const categories: string[] = [];
+
+    for (const [institution, pattern] of Object.entries(INSTITUTION_PATTERNS)) {
+      const matches = article.match(pattern as RegExp);
+      if (matches) {
+        categories.push(institution);
+      }
+    }
+
+    if (this.llmApiConfig) {
+      const categoriesString = categoriesToString(CATEGORIES);
+
+      const prompt = `请根据以下规则为文章选择最合适的分类标签：
+                      规则：
+                      1. 分类与文章内容高度相关，总数不超过3个
+                      2. 优先选择最具体的叶子节点分类（没有子分类的类别）
+                      3. 如果选择了某个子分类，则不要选择其父分类
+                      4. 可以跨分支选择多个相关分类
+                      5. 每个选择的分类都应该与文章核心内容直接相关
+                      6. 使用'#'号分隔不同分类标签
+
+                      可选分类及其路径：
+                      ${categoriesString}
+
+                      请分析文章内容，列出最合适的分类标签（可多选），请直接返回分类标签序列,不要包含任何其他文字、符号或说明。
+    `;
+      const response = await aiService.chat(
+        `${prompt}\n---\n${article}`,
+        this.llmApiConfig
+      );
+
+      const customCategories = response
+        .split("#")
+        .map(category => category.trim());
+
+      categories.push(...customCategories);
+    }
+
+    return Array.from(new Set(categories));
   }
 }
