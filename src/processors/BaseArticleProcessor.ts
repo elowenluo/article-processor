@@ -11,6 +11,7 @@ import {
   CATEGORIES,
   categoriesToString,
 } from "../config/categoryConfig";
+import { withRetry } from "../utils/retry";
 import sanitize from "sanitize-html";
 import axios from "axios";
 import sharp from "sharp";
@@ -88,26 +89,20 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
   abstract parseSource(): string;
 
   async getHtml(url: string): Promise<string> {
-    try {
-      const browser = await launch({ headless: true });
-      const page = await browser.newPage();
-      await page.goto(url);
-
-      const html = await page.content();
-
-      if (!html || html.trim() === "") {
-        throw new Error("No HTML content found");
-      }
-
-      await browser.close();
-      return html;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to fetch HTML from ${url}: ${error.message}`);
-      } else {
-        throw new Error(`Failed to fetch HTML from ${url}`);
-      }
-    }
+    return withRetry(
+      async () => {
+        const browser = await launch({ headless: true });
+        try {
+          const page = await browser.newPage();
+          await page.goto(url);
+          return await page.content();
+        } finally {
+          await browser.close();
+        }
+      },
+      3,
+      2000
+    );
   }
 
   formatHtml(html: string): string {
