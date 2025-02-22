@@ -107,12 +107,11 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
 
   formatHtml(html: string): string {
     let cleanHtml = html.replace(
-      /(adsbygoogle\s*=\s*window\.adsbygoogle\s*\|\|\s*\[\])\.push\(\{\}\);?/g,
+      "(adsbygoogle = window.adsbygoogle || []).push({});",
       ""
     );
-    cleanHtml = cleanHtml.replace(/<div[^>]*>(adsbygoogle[^<]*)<\/div>/g, "");
 
-    return sanitize(html, {
+    return sanitize(cleanHtml, {
       allowedTags: [
         "article",
         "section",
