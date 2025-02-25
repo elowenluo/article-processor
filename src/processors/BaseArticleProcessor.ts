@@ -111,6 +111,17 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       ""
     );
 
+    const $ = load(cleanHtml);
+    $("a img").each((_, img) => {
+      const $img = $(img);
+      const $a = $img.parent("a");
+
+      // Extract the image with its attributes
+      $a.replaceWith($img);
+    });
+
+    cleanHtml = $.html();
+
     return sanitize(cleanHtml, {
       allowedTags: [
         "article",

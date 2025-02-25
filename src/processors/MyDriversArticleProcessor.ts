@@ -24,6 +24,7 @@ export class MyDriversArticleProcessor extends BaseArticleProcessor {
       .replace(/近日消息(?![，,])/g, "近日消息，");
     $firstParagraph.html(text);
 
+    // TODO remove this code if the website is fixed
     // add "https" to the image src
     $content.find("img").each((_, img) => {
       const $img = this.$(img);
