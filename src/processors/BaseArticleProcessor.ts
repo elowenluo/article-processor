@@ -71,9 +71,11 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
         ""
       );
 
-    const summary = await this.generateSummary(mainContent);
-    const tags = await this.generateTags(mainContent);
-    const categories = await this.generateCategories(mainContent);
+    const [summary, tags, categories] = await Promise.all([
+      this.generateSummary(mainContent),
+      this.generateTags(mainContent),
+      this.generateCategories(mainContent)
+    ]);
 
     return {
       title,
