@@ -11,7 +11,7 @@ export const INSTITUTION_PATTERNS = {
   IDC: /\bIDC\b|国际数据公司|\bInternational Data Corporation\b/,
   "Strategy Analytics": /\bStrategy Analytics\b/,
   TrendForce: /\bTrendForce\b|集邦咨询/,
-  Counterpoint: /\bCounterpoint\b/,
+  Counterpoint: /\bCounterpoint\b|\bCounterpoint Research\b/,
   Canalys: /\bCanalys\b/,
   CNNIC: /\bCNNIC\b|中国互联网络信息中心/,
 
