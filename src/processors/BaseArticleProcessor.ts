@@ -149,6 +149,12 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       ],
       allowedAttributes: {
         img: ["src", "alt"],
+        p: ["style"],
+      },
+      allowedStyles: {
+        p: {
+          "text-align": [/left|center|right/],
+        },
       },
       nonTextTags: ["img", "br"],
       // Delete all tags that do not contain text
