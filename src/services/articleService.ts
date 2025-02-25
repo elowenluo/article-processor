@@ -2,15 +2,17 @@ import { ArticleResponse } from "../types/article";
 import { CNBetaArticleProcessor } from "../processors/CNBetaArticleProcessor";
 import { MyDriversArticleProcessor } from "../processors/MyDriversArticleProcessor";
 import { LLMApiConfig } from "../types/article";
+import { globalTaskQueue } from "../utils/rateLimiter";
 
 export class ArticleService {
   async processUrls(
     urls: string[],
     llmApiConfig: LLMApiConfig
   ): Promise<ArticleResponse[]> {
-    const results = await Promise.all(
-      urls.map(async url => this.processUrl(url, llmApiConfig))
+    const promises = urls.map(url =>
+      globalTaskQueue.enqueue(() => this.processUrl(url, llmApiConfig))
     );
+    const results = await Promise.all(promises);
 
     return results;
   }
