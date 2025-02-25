@@ -294,7 +294,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       this.llmApiConfig
     );
 
-    return response;
+    return response.replace(/\n/g, "");
   }
 
   async generateCategories(article: string): Promise<string[]> {
