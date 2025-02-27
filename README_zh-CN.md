@@ -32,9 +32,12 @@ Article Processor 是一个用于文章转载处理的工具，它能自动处�
 
 ## 技术架构
 
+### 接口
+
 | 接口                     | 方法 | 描述                              |
 | ------------------------ | ---- | --------------------------------- |
 | /process                 | POST | 处理文章 URL 数组并返回 JSON 结果 |
+| /processStatus/:jobId    | GET  | 获取任务处理状态和结果            |
 | /downloadImage:imageName | GET  | 获取处理后的图片                  |
 
 ### 支持的域名
@@ -144,6 +147,35 @@ curl -X POST http://localhost:3000/process \
 #### 响应示例：
 
 ```json
+{
+  "jobId": "ae587e58-350f-4303-8c59-9c67b09ec189",
+  "status": "processing",
+  "message": "Processing started. Check status at the URL below.",
+  "statusUrl": "/processStatus/ae587e58-350f-4303-8c59-9c67b09ec189"
+}
+```
+
+### 获取处理状态和结果
+
+```bash
+curl -X GET http://localhost:3000/processStatus/ae587e58-350f-4303-8c59-9c67b09ec189
+```
+
+#### 处理中响应示例：
+
+```json
+{
+  "jobId": "ae587e58-350f-4303-8c59-9c67b09ec189",
+  "status": "processing",
+  "message": "Job is still processing",
+  "createdAt": "2025-02-27T01:21:06.662Z",
+  "updatedAt": "2025-02-27T01:21:06.662Z"
+}
+```
+
+#### 已完成响应示例：
+
+```json
 [
   {
     "title": "DeepSeek成最快突破3000万日活应用程序：手机终端厂商抢着接入DeepSeek",
@@ -153,6 +185,18 @@ curl -X POST http://localhost:3000/process \
     "categories": ["人工智能", "数据智能", "移动应用"]
   }
 ]
+```
+
+#### 失败响应示例：
+
+```json
+{
+  "jobId": "ae587e58-350f-4303-8c59-9c67b09ec189",
+  "status": "failed",
+  "error": "Failed to process article: Invalid URL or unsupported website",
+  "createdAt": "2025-02-27T01:21:06.662Z",
+  "updatedAt": "2025-02-27T01:21:06.662Z"
+}
 ```
 
 ## 待完成功能

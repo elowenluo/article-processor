@@ -32,9 +32,12 @@ Article Processor is a tool for article content reproduction and processing. It 
 
 ## Technical Architecture
 
+### API
+
 | Endpoint                 | Method | Description                                              |
 | ------------------------ | ------ | -------------------------------------------------------- |
 | /process                 | POST   | Process an array of article URLs and return JSON results |
+| /processStatus/:jobId    | GET    | Get job status and results                               |
 | /downloadImage:imageName | GET    | Retrieve processed images                                |
 
 ### Supported Domains and Processors
@@ -144,6 +147,37 @@ curl -X POST http://localhost:3000/process \
 #### Example response:
 
 ```json
+{
+  "jobId": "ae587e58-350f-4303-8c59-9c67b09ec189",
+  "status": "processing",
+  "message": "Processing started. Check status at the URL below.",
+  "statusUrl": "/processStatus/ae587e58-350f-4303-8c59-9c67b09ec189"
+}
+```
+
+### Getting Job Status and Results
+
+Send a GET request to the /processStatus/:jobId endpoint to retrieve the job status and results:
+
+```bash
+curl -X GET http://localhost:3000/processStatus/ae587e58-350f-4303-8c59-9c67b09ec189
+```
+
+#### Processing Response Example:
+
+```json
+{
+  "jobId": "ae587e58-350f-4303-8c59-9c67b09ec189",
+  "status": "processing",
+  "message": "Job is still processing",
+  "createdAt": "2025-02-27T01:21:06.662Z",
+  "updatedAt": "2025-02-27T01:21:06.662Z"
+}
+```
+
+#### Completed Response Example:
+
+```json
 [
   {
     "title": "DeepSeek成最快突破3000万日活应用程序：手机终端厂商抢着接入DeepSeek",
@@ -153,6 +187,18 @@ curl -X POST http://localhost:3000/process \
     "categories": ["人工智能", "数据智能", "移动应用"]
   }
 ]
+```
+
+#### Failed Response Example:
+
+```json
+{
+  "jobId": "ae587e58-350f-4303-8c59-9c67b09ec189",
+  "status": "failed",
+  "error": "Failed to process article: Invalid URL or unsupported website",
+  "createdAt": "2025-02-27T01:21:06.662Z",
+  "updatedAt": "2025-02-27T01:21:06.662Z"
+}
 ```
 
 ## Todo
