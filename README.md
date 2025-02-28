@@ -40,13 +40,6 @@ Article Processor is a tool for article content reproduction and processing. It 
 | /processStatus/:jobId    | GET    | Get job status and results                               |
 | /downloadImage:imageName | GET    | Retrieve processed images                                |
 
-### Supported Domains and Processors
-
-| Domain             | Processor                 |
-| ------------------ | ------------------------- |
-| news.mydrivers.com | MyDriversArticleProcessor |
-| www.cnbeta.com.tw  | CNBetaArticleProcessor    |
-
 ## Quick Start
 
 ### Installation

@@ -40,13 +40,6 @@ Article Processor 是一个用于文章转载处理的工具，它能自动处�
 | /processStatus/:jobId    | GET  | 获取任务处理状态和结果            |
 | /downloadImage:imageName | GET  | 获取处理后的图片                  |
 
-### 支持的域名
-
-| 域名               | 处理器                    |
-| ------------------ | ------------------------- |
-| news.mydrivers.com | MyDriversArticleProcessor |
-| www.cnbeta.com.tw  | CNBetaArticleProcessor    |
-
 ## 快速开始
 
 ### 安装
