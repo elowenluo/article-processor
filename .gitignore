@@ -38,3 +38,5 @@ coverage/
 # Temp files
 tmp/
 temp/
+
+.vscode/
