@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
 
 export class AiService {
-  private async handleChat(
+  private async handleOpenAICompatibleAPI(
     message: string,
     llmApiConfig: LLMApiConfig
   ): Promise<string> {
@@ -32,7 +32,35 @@ export class AiService {
     return responseData.choices[0].message.content;
   }
 
-  private async handleGeminiChat(
+  private async handleClaudeAPI(
+    message: string,
+    llmApiConfig: LLMApiConfig
+  ): Promise<string> {
+    const { model, url = "", apiKey } = llmApiConfig;
+
+    const data = JSON.stringify({
+      model,
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: message,
+        },
+      ],
+    });
+
+    const response = await axios.post(url, data, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+    });
+
+    return response.data.content[0].text;
+  }
+
+  private async handleGeminiSDK(
     message: string,
     llmApiConfig: LLMApiConfig
   ): Promise<string> {
@@ -50,7 +78,7 @@ export class AiService {
     }
   }
 
-  private async handleOpenAIChat(
+  private async handleOpenAISDK(
     message: string,
     llmApiConfig: LLMApiConfig
   ): Promise<string> {
@@ -77,13 +105,17 @@ export class AiService {
       const { model, url } = llmApiConfig;
 
       if (url) {
-        return await this.handleChat(message, llmApiConfig);
+        if (model.toLowerCase().includes("claude")) {
+          return await this.handleClaudeAPI(message, llmApiConfig);
+        } else {
+          return await this.handleOpenAICompatibleAPI(message, llmApiConfig);
+        }
       }
 
       if (model.toLowerCase().startsWith("gpt")) {
-        return await this.handleOpenAIChat(message, llmApiConfig);
+        return await this.handleOpenAISDK(message, llmApiConfig);
       } else if (model.toLowerCase().startsWith("gemini")) {
-        return await this.handleGeminiChat(message, llmApiConfig);
+        return await this.handleGeminiSDK(message, llmApiConfig);
       } else {
         throw new Error("Invalid model");
       }
