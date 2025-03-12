@@ -25,6 +25,7 @@ export class ArticleService {
     url: string,
     llmApiConfig: LLMApiConfig
   ): Promise<ArticleResponse> {
+    console.log(`Processing URL: ${url}`);
     const domain = new URL(url).hostname;
     const processor = this.getProcessor(domain, url, llmApiConfig);
     const article = await processor.processArticle(url);

@@ -66,7 +66,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
     );
     const source = this.parseSource();
     const content =
-      `<article>${mainContent}<footer>自 ${source}</footer></article>`.replace(
+      `${mainContent}<footer>自 ${source}</footer>`.replace(
         /\n/g,
         ""
       );
