@@ -67,8 +67,11 @@ HOST=http://localhost
 # 服务运行端口
 PORT=3000
 
-# 最大同时处理任务数量
+# 最大同时处理子任务数量
 MAX_CONCURRENT_TASKS=3
+
+# 最大同时处理任务数量
+MAX_CONCURRENT_JOBS=1
 ```
 
 ### 运行

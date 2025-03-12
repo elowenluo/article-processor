@@ -67,8 +67,11 @@ HOST=http://localhost
 # Service port
 PORT=3000
 
-# Maximum number of concurrent processing tasks
+# Maximum number of concurrent processing tasks (within a job)
 MAX_CONCURRENT_TASKS=3
+
+# Maximum number of concurrent jobs (defaults to 1)
+MAX_CONCURRENT_JOBS=1
 ```
 
 ### Running

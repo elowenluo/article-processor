@@ -1,7 +1,12 @@
 import { Request, Response } from "express";
 import { ArticleService } from "../services/articleService";
 
-const articleService = new ArticleService();
+// Get max concurrent jobs from environment variables or default to 1
+const MAX_CONCURRENT_JOBS = process.env.MAX_CONCURRENT_JOBS
+  ? parseInt(process.env.MAX_CONCURRENT_JOBS)
+  : 1;
+
+const articleService = new ArticleService(MAX_CONCURRENT_JOBS);
 
 export const processArticles = async (
   req: Request,

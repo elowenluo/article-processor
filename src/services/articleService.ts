@@ -8,12 +8,22 @@ import { v4 as uuidv4 } from "uuid";
 
 export class ArticleService {
   private jobs: Map<string, Job> = new Map();
+  private jobQueue: { id: string; config: LLMApiConfig }[] = []; // Queue of jobs with their configs
+  private runningJobCount: number = 0; // Counter for currently running jobs
+  private maxConcurrentJobs: number; // Maximum number of jobs that can run concurrently
+
+  constructor(maxConcurrentJobs: number = 1) {
+    this.maxConcurrentJobs = maxConcurrentJobs;
+    console.log(
+      `Article Service initialized with max ${maxConcurrentJobs} concurrent jobs`
+    );
+  }
 
   private async processUrls(
     urls: string[],
     llmApiConfig: LLMApiConfig
   ): Promise<ArticleResponse[]> {
-    const promises = urls.map(url =>
+    const promises = urls.map((url) =>
       globalTaskQueue.enqueue(() => this.processUrl(url, llmApiConfig))
     );
     const results = await Promise.all(promises);
@@ -59,8 +69,14 @@ export class ArticleService {
     };
 
     this.jobs.set(id, job);
+    this.jobQueue.push({ id, config: llmApiConfig });
+    console.log(
+      `Job ${id} added to queue. Queue length: ${this.jobQueue.length}`
+    );
 
-    this.processJob(id, llmApiConfig);
+    if (this.runningJobCount < this.maxConcurrentJobs) {
+      this.processNextJob();
+    }
 
     return job;
   }
@@ -97,7 +113,33 @@ export class ArticleService {
       job.updatedAt = new Date();
       this.jobs.set(id, job);
       console.error(`Error processing job ${id}:`, error);
+    } finally {
+      // Decrement running jobs counter and try to process the next job
+      this.runningJobCount--;
+      console.log(
+        `Job slot freed. Running: ${this.runningJobCount}/${this.maxConcurrentJobs}. Queued: ${this.jobQueue.length}`
+      );
+      this.processNextJob();
     }
+  }
+
+  private processNextJob() {
+    // If at capacity or queue is empty, do nothing
+    if (
+      this.runningJobCount >= this.maxConcurrentJobs ||
+      this.jobQueue.length === 0
+    ) {
+      return;
+    }
+
+    // Get next job from queue
+    const nextJob = this.jobQueue.shift();
+    if (!nextJob) return;
+
+    this.runningJobCount++;
+
+    // Process the job
+    this.processJob(nextJob.id, nextJob.config);
   }
 
   cleanupOldJobs(maxAgeHours = 24): void {
