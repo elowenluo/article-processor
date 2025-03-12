@@ -60,6 +60,36 @@ export class AiService {
     return response.data.content[0].text;
   }
 
+  private async handleGeminiAPI(
+    message: string,
+    llmApiConfig: LLMApiConfig
+  ): Promise<string> {
+    const { apiKey, model } = llmApiConfig;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const data = JSON.stringify({
+      contents: [
+        {
+          parts: [{ text: message }],
+        },
+      ],
+    });
+
+    try {
+      const response = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data.candidates[0].content.parts[0].text;
+    } catch (error) {
+      console.error("Error processing Gemini API request:", error);
+      throw new Error("Failed to process Gemini API request");
+    }
+  }
+
   private async handleGeminiSDK(
     message: string,
     llmApiConfig: LLMApiConfig
@@ -115,7 +145,8 @@ export class AiService {
       if (model.toLowerCase().startsWith("gpt")) {
         return await this.handleOpenAISDK(message, llmApiConfig);
       } else if (model.toLowerCase().startsWith("gemini")) {
-        return await this.handleGeminiSDK(message, llmApiConfig);
+        // return await this.handleGeminiSDK(message, llmApiConfig);
+        return await this.handleGeminiAPI(message, llmApiConfig);
       } else {
         throw new Error("Invalid model");
       }
