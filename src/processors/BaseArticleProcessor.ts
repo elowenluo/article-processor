@@ -81,7 +81,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       title,
       content,
       summary,
-      tags: tags.join("、"),
+      tags: tags,
       categories,
     };
   }

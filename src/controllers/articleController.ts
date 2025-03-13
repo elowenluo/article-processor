@@ -48,7 +48,13 @@ export const getJobStatus = async (
     }
 
     if (job.status === "completed") {
-      res.status(200).json(job.results);
+      res.status(200).json({
+        jobId: job.id,
+        status: job.status,
+        results: job.results,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+      });
     } else if (job.status === "failed") {
       res.status(422).json({
         jobId: job.id,
