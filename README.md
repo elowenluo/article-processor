@@ -85,6 +85,41 @@ npm run build
 npm start
 ```
 
+### Docker Deployment
+
+You can also run Article Processor using Docker:
+
+```bash
+docker pull sisuad/article-processor:latest
+```
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -e HOST=http://localhost \
+  -e PORT=3000 \
+  -e MAX_CONCURRENT_TASKS=3 \
+  -e MAX_CONCURRENT_JOBS=1 \
+  -e TZ=Asia/Shanghai \
+  -v $(pwd)/images:/app/images \
+  --restart unless-stopped \
+  --name article-processor \
+  sisuad/article-processor:latest
+```
+
+### Docker Compose Deployment
+
+For easier deployment, you can use Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+To stop the service:
+
+```bash
+docker-compose down
+```
+
 ## API Usage Example
 
 ### Processing Articles

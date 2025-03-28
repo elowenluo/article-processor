@@ -84,6 +84,39 @@ npm run dev
 npm run build
 npm start
 ```
+### Docker 部署
+使用 Docker 部署 Article Processor 非常简单。首先，确保你已经安装了 Docker。
+
+```bash
+docker pull sisuad/article-processor:latest
+```
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -e HOST=http://localhost \
+  -e PORT=3000 \
+  -e MAX_CONCURRENT_TASKS=3 \
+  -e MAX_CONCURRENT_JOBS=1 \
+  -e TZ=Asia/Shanghai \
+  -v $(pwd)/images:/app/images \
+  --restart unless-stopped \
+  --name article-processor \
+  sisuad/article-processor:latest
+```
+
+### Docker Compose 部署 
+使用 Docker Compose 部署 Article Processor 非常简单。首先，确保你已经安装了 Docker 和 Docker Compose。
+
+# 启动服务
+```bash
+docker-compose up -d
+```
+
+# 停止服务
+
+```bash
+docker-compose down
+```
 
 ## API 使用实例
 
