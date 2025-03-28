@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  article-processor:
+    image: sisuad/article-processor:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - HOST=http://localhost
+      - PORT=3000
+      - MAX_CONCURRENT_TASKS=3
+      - MAX_CONCURRENT_JOBS=1
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./images:/app/images
+    restart: unless-stopped
