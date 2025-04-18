@@ -7,9 +7,10 @@ import { load } from "cheerio";
 import { launch } from "puppeteer";
 import { AiService } from "../services/aiService";
 import {
-  INSTITUTION_PATTERNS,
-  CATEGORIES,
+  findCategoriesByPattern,
+  loadCategoryHierarchy,
   categoriesToString,
+  mapCategoriesToIds,
 } from "../config/categoryConfig";
 import { withRetry } from "../utils/retry";
 import sanitize from "sanitize-html";
@@ -61,21 +62,22 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
     this.$ = load(this.html);
 
     const title = this.parseTitle();
-    const mainContent = await this.processImages(
+    const { content: mainContent, imageUrls } = await this.processImages(
       this.formatHtml(this.parseContent())
     );
     const source = this.parseSource();
-    const content =
-      `${mainContent}<footer>自 ${source}</footer>`.replace(
-        /\n/g,
-        ""
-      );
+    const content = `${mainContent}<footer>自 ${source}</footer>`.replace(
+      /\n/g,
+      ""
+    );
 
-    const [summary, tags, categories] = await Promise.all([
+    const [summary, tags, categoriesResult] = await Promise.all([
       this.generateSummary(mainContent),
       this.generateTags(mainContent),
-      this.generateCategories(mainContent)
+      this.generateCategories(mainContent),
     ]);
+
+    const [categories, categoryIds] = categoriesResult;
 
     return {
       title,
@@ -83,6 +85,8 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       summary,
       tags: tags,
       categories,
+      categoryIds,
+      imageUrls,
     };
   }
 
@@ -169,14 +173,23 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
     });
   }
 
-  async processImages(html: string): Promise<string> {
+  async processImages(html: string): Promise<{
+    content: string;
+    imageUrls: string[];
+  }> {
     const $ = load(html);
     const images = $("img");
+    const imageUrls: string[] = [];
 
     // center the images
     images.each((_, img) => {
       $(img).wrap("<figure></figure>");
       $(img).parent().css("text-align", "center");
+
+      const url = $(img).attr("src");
+      if (url) {
+        imageUrls.push(url);
+      }
     });
 
     // download images
@@ -197,7 +210,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       await Promise.all(imagePromises);
     }
 
-    return $("body").html() ?? "";
+    return { content: $.html(), imageUrls: imageUrls };
   }
 
   async getNewImageSrc(src: string): Promise<string> {
@@ -271,8 +284,8 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
 
     return response
       .split("#")
-      .map(tag => tag.trim())
-      .filter(tag => tag !== "");
+      .map((tag) => tag.trim())
+      .filter((tag) => tag !== "");
   }
 
   async generateSummary(article: string): Promise<string> {
@@ -299,45 +312,54 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
     return response.replace(/\n/g, "");
   }
 
-  async generateCategories(article: string): Promise<string[]> {
-    const categories: string[] = [];
+  async generateCategories(article: string): Promise<[string[], number[]]> {
+    // Step 1: Pattern-based classification
+    const patternCategories = findCategoriesByPattern(article);
 
-    for (const [institution, pattern] of Object.entries(INSTITUTION_PATTERNS)) {
-      const matches = article.match(pattern as RegExp);
-      if (matches) {
-        categories.push(institution);
+    // Step 2: AI-based classification (if configured)
+    let aiCategories: string[] = [];
+
+    if (this.llmApiConfig) {
+      const categoryHierarchy = loadCategoryHierarchy();
+
+      // Only proceed with AI categorization if we have categories defined
+      if (categoryHierarchy.length > 0) {
+        const categoriesString = categoriesToString(categoryHierarchy);
+
+        const prompt = `请根据以下规则为文章选择最合适的分类标签：
+                        规则：
+                        1. 分类与文章内容高度相关，总数不超过3个
+                        2. 优先选择最具体的叶子节点分类（没有子分类的类别）
+                        3. 如果选择了某个子分类，则不要选择其父分类
+                        4. 可以跨分支选择多个相关分类
+                        5. 每个选择的分类都应该与文章核心内容直接相关
+                        6. 使用'#'号分隔不同分类标签
+  
+                        可选分类及其路径：
+                        ${categoriesString}
+  
+                        请分析文章内容，列出最合适的分类标签（可多选），请直接返回分类标签序列,不要包含任何其他文字、符号或说明。
+        `;
+
+        const response = await aiService.chat(
+          `${prompt}\n---\n${article}`,
+          this.llmApiConfig
+        );
+
+        aiCategories = response
+          .split("#")
+          .map((category) => category.trim())
+          .filter((category) => category !== "");
       }
     }
 
-    if (this.llmApiConfig) {
-      const categoriesString = categoriesToString(CATEGORIES);
+    // Combine all categories and remove duplicates
+    const allCategories = [...patternCategories, ...aiCategories];
+    const uniqueCategories = Array.from(new Set(allCategories));
 
-      const prompt = `请根据以下规则为文章选择最合适的分类标签：
-                      规则：
-                      1. 分类与文章内容高度相关，总数不超过3个
-                      2. 优先选择最具体的叶子节点分类（没有子分类的类别）
-                      3. 如果选择了某个子分类，则不要选择其父分类
-                      4. 可以跨分支选择多个相关分类
-                      5. 每个选择的分类都应该与文章核心内容直接相关
-                      6. 使用'#'号分隔不同分类标签
+    // Map category names to IDs
+    const categoryIds = mapCategoriesToIds(uniqueCategories);
 
-                      可选分类及其路径：
-                      ${categoriesString}
-
-                      请分析文章内容，列出最合适的分类标签（可多选），请直接返回分类标签序列,不要包含任何其他文字、符号或说明。
-    `;
-      const response = await aiService.chat(
-        `${prompt}\n---\n${article}`,
-        this.llmApiConfig
-      );
-
-      const customCategories = response
-        .split("#")
-        .map(category => category.trim());
-
-      categories.push(...customCategories);
-    }
-
-    return Array.from(new Set(categories));
+    return [uniqueCategories, categoryIds];
   }
 }

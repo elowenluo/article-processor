@@ -1,0 +1,22 @@
+{
+  "IDC": "/\\bIDC\\b|国际数据公司|\\bInternational Data Corporation\\b/",
+  "Strategy Analytics": "/\\bStrategy Analytics\\b/",
+  "TrendForce": "/\\bTrendForce\\b|集邦咨询/",
+  "Counterpoint": "/\\bCounterpoint\\b|\\bCounterpoint Research\\b/",
+  "Canalys": "/\\bCanalys\\b/",
+  "CNNIC": "/\\bCNNIC\\b|中国互联网络信息中心/",
+  "Android": "/\\bAndroid\\b/",
+  "iPhone": "/\\biPhone\\b/",
+  "iPad": "/\\biPad\\b/",
+  "Kindle": "/\\bKindle\\b/",
+  "App Store": "/\\bApp Store\\b/",
+  "Google Play": "/\\bGoogle Play\\b/",
+  "IaaS": "/\\bIaaS\\b/",
+  "PaaS": "/\\bPaaS\\b/",
+  "SaaS": "/\\bSaaS\\b/",
+  "Chrome": "/\\bChrome\\b/",
+  "Firefox": "/\\bFirefox\\b/",
+  "Opera": "/\\bOpera\\b/",
+  "Flickr": "/\\bFlickr\\b/",
+  "Pinterest": "/\\bPinterest\\b/"
+}
