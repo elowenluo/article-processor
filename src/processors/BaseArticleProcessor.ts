@@ -185,11 +185,6 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
     images.each((_, img) => {
       $(img).wrap("<figure></figure>");
       $(img).parent().css("text-align", "center");
-
-      const url = $(img).attr("src");
-      if (url) {
-        imageUrls.push(url);
-      }
     });
 
     // download images
@@ -208,6 +203,13 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       });
 
       await Promise.all(imagePromises);
+
+      images.each((_, img) => {
+        const src = $(img).attr("src");
+        if (src) {
+          imageUrls.push(src);
+        }
+      });
     }
 
     return { content: $.html(), imageUrls: imageUrls };
