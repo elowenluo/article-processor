@@ -40,3 +40,5 @@ tmp/
 temp/
 
 .vscode/
+
+/config
