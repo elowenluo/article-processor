@@ -18,7 +18,7 @@ export class AiService {
           content: message,
         },
       ],
-    });sisuad/article-processor
+    });
 
     try {
       const response = await axios.post(url, data, {
