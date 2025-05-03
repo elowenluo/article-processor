@@ -41,7 +41,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
     needDownloadImages?: boolean
   ) {
     this.url = url;
-    this.needDownloadImages = needDownloadImages || false;
+    this.needDownloadImages = needDownloadImages || true;
 
     if (llmApiConfig) {
       this.llmApiConfig = llmApiConfig;

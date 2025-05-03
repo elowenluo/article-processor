@@ -39,6 +39,9 @@ coverage/
 tmp/
 temp/
 
+# Images
+./images
+
 <<<<<<< Updated upstream
 .vscode/
 
