@@ -258,9 +258,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
 
     const prompt = `你是文章标签分析助手，请按以下规则生成标签：
                     数量规则：
-                    - 短文(<1000字): 3-5个
-                    - 中长文(1000-3000字): 4-6个 
-                    - 长文(>3000字): 5-8个
+                    - 每篇文章生成3-5个标签
 
                     排序规则：
                     1. 首位为核心主题标签
