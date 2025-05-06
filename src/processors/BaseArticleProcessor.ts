@@ -81,6 +81,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       categories: meta.categories,
       categoryIds: meta.categoryIds,
       imageUrls,
+      url: this.url,
     };
   }
 

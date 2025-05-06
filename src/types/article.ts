@@ -6,6 +6,7 @@ export interface ArticleResponse {
   categories: string[];
   categoryIds: number[];
   imageUrls: string[];
+  url: string;
 }
 
 export interface LLMApiConfig {
