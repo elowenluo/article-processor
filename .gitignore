@@ -39,6 +39,13 @@ coverage/
 tmp/
 temp/
 
+# Images
+./images
+
+<<<<<<< Updated upstream
 .vscode/
 
 /config
+=======
+.vscode/Users/
+>>>>>>> Stashed changes

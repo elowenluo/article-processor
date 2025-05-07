@@ -1,4 +1,7 @@
-FROM node:18-alpine
+# 使用Docker Buildx进行多平台构建
+# syntax=docker/dockerfile:1.3
+
+FROM --platform=$BUILDPLATFORM node:18-alpine AS base
 
 # 安装Puppeteer所需的Chrome依赖
 RUN apk add --no-cache \

@@ -1,5 +1,5 @@
 import { LLMApiConfig } from "../types/article";
-import axios from "axios";
+import axios, { AxiosError } from "axios"; // Import AxiosError
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
 
@@ -20,16 +20,34 @@ export class AiService {
       ],
     });
 
-    const response = await axios.post(url, data, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-    });
+    try {
+      const response = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
 
-    const responseData = response.data;
-
-    return responseData.choices[0].message.content;
+      const responseData = response.data;
+      return responseData.choices[0].message.content;
+    } catch (error) {
+      // Add specific error handling
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        console.error(
+          `Error calling OpenAI Compatible API (${url}, model: ${model}): Status ${axiosError.response?.status}, Message: ${axiosError.message}`
+        );
+        throw new Error(
+          `OpenAI Compatible API request failed: Status ${axiosError.response?.status}`
+        );
+      } else {
+        console.error(
+          `Unknown error calling OpenAI Compatible API (${url}, model: ${model}):`,
+          error
+        );
+        throw new Error("Unknown error during OpenAI Compatible API request");
+      }
+    }
   }
 
   private async handleClaudeAPI(
@@ -49,15 +67,34 @@ export class AiService {
       ],
     });
 
-    const response = await axios.post(url, data, {
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-    });
+    try {
+      const response = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+      });
 
-    return response.data.content[0].text;
+      return response.data.content[0].text;
+    } catch (error) {
+      // Add specific error handling
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        console.error(
+          `Error calling Claude API (${url}, model: ${model}): Status ${axiosError.response?.status}, Message: ${axiosError.message}`
+        );
+        throw new Error(
+          `Claude API request failed: Status ${axiosError.response?.status}`
+        );
+      } else {
+        console.error(
+          `Unknown error calling Claude API (${url}, model: ${model}):`,
+          error
+        );
+        throw new Error("Unknown error during Claude API request");
+      }
+    }
   }
 
   private async handleGeminiAPI(
@@ -83,10 +120,44 @@ export class AiService {
         },
       });
 
-      return response.data.candidates[0].content.parts[0].text;
+      // Add safety check for response structure
+      if (
+        response.data &&
+        response.data.candidates &&
+        response.data.candidates[0] &&
+        response.data.candidates[0].content &&
+        response.data.candidates[0].content.parts &&
+        response.data.candidates[0].content.parts[0]
+      ) {
+        return response.data.candidates[0].content.parts[0].text;
+      } else {
+        console.error(
+          `Unexpected response structure from Gemini API (${url}, model: ${model}):`,
+          response.data
+        );
+        throw new Error("Unexpected response structure from Gemini API");
+      }
     } catch (error) {
-      console.error("Error processing Gemini API request:", error);
-      throw new Error("Failed to process Gemini API request");
+      // Add specific error handling
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        console.error(
+          `Error calling Gemini API (${url}, model: ${model}): Status ${axiosError.response?.status}, Message: ${axiosError.message}`
+        );
+        // Log response data if available for debugging 503s or other errors
+        if (axiosError.response?.data) {
+          console.error("Gemini API Error Response Data:", axiosError.response.data);
+        }
+        throw new Error(
+          `Gemini API request failed: Status ${axiosError.response?.status}`
+        );
+      } else {
+        console.error(
+          `Unknown error calling Gemini API (${url}, model: ${model}):`,
+          error
+        );
+        throw new Error("Unknown error during Gemini API request");
+      }
     }
   }
 
@@ -131,6 +202,7 @@ export class AiService {
   }
 
   async chat(message: string, llmApiConfig: LLMApiConfig): Promise<string> {
+    // Keep the outer try-catch for general errors, but specific errors are now handled inside the handlers
     try {
       const { model, url } = llmApiConfig;
 
@@ -148,11 +220,16 @@ export class AiService {
         // return await this.handleGeminiSDK(message, llmApiConfig);
         return await this.handleGeminiAPI(message, llmApiConfig);
       } else {
-        throw new Error("Invalid model");
+        console.error(`Invalid model specified: ${model}`);
+        throw new Error(`Invalid model specified: ${model}`);
       }
     } catch (error) {
-      console.error("Error processing chat:", error);
-      throw new Error("Failed to process chat");
+      // Log the error originating from the handlers or SDKs
+      console.error("Error processing chat request:", error);
+      // Re-throw a user-friendly error, the specific details are already logged
+      throw new Error(
+        `Failed to process chat: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }
