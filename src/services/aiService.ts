@@ -38,7 +38,7 @@ export class AiService {
           `Error calling OpenAI Compatible API (${url}, model: ${model}): Status ${axiosError.response?.status}, Message: ${axiosError.message}`
         );
         throw new Error(
-          `OpenAI Compatible API request failed: Status ${axiosError.response?.status}`
+          `OpenAI Compatible API request failed: Status ${axiosError.response?.status} , Message: ${axiosError.message}`
         );
       } else {
         console.error(
