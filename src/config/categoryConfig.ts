@@ -16,6 +16,11 @@ interface CategoryIdMapping {
   class: string;
 }
 
+interface CategoryNode {
+  name: string;
+  children: CategoryNode[];
+}
+
 // Load files with error handling
 function safeLoadJsonFile<T>(filePath: string, defaultValue: T): T {
   try {
@@ -98,36 +103,28 @@ export function mapCategoriesToIds(categoryNames: string[]): number[] {
 
 // Flatten categories for AI prompt
 export function categoriesToString(categories: Category[]): string {
-  function flattenCategories(
-    categories: Category[],
-    parentPath: string[] = []
-  ): Array<{ name: string; path: string[]; isLeaf: boolean }> {
-    let result: Array<{ name: string; path: string[]; isLeaf: boolean }> = [];
+  function generateCategoryPaths(
+    items: CategoryNode[],
+    parentPath: string = ""
+  ): string[] {
+    const paths: string[] = [];
 
-    categories.forEach((category) => {
-      const currentPath = [...parentPath, category.name];
-      if (!category.children || category.children.length === 0) {
-        result.push({
-          name: category.name,
-          path: currentPath,
-          isLeaf: true,
-        });
-      } else {
-        result.push({
-          name: category.name,
-          path: currentPath,
-          isLeaf: false,
-        });
-        result = result.concat(
-          flattenCategories(category.children, currentPath)
-        );
+    for (const item of items) {
+      // generate full path
+      const currentPath = parentPath ? `${parentPath}/${item.name}` : item.name;
+
+      paths.push(currentPath);
+
+      if (item.children && item.children.length > 0) {
+        const childPaths = generateCategoryPaths(item.children, currentPath);
+        paths.push(...childPaths);
       }
-    });
+    }
 
-    return result;
+    return paths;
   }
 
-  return JSON.stringify(flattenCategories(categories));
+  return JSON.stringify(generateCategoryPaths(categories));
 }
 
 // Function to find categories by regex patterns
