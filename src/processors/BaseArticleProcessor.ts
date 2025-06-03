@@ -321,8 +321,8 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
 
 4. categories：请根据以下规则为文章选择最合适的分类标签（数组）：
   - 分类与文章内容高度相关，总数不超过3个
-  - 优先选择最具体的叶子节点分类（没有子分类的类别）
-  - 如果选择了某个子分类，则不要选择其父分类
+  - 优先选择最具体的分类，总是尝试选择最深层（叶节点）的分类
+  - 向上回退策略：如果所有叶节点都不合适，选择最接近叶节点且合适的父类
   - 可以跨分支选择多个相关分类
   - 每个选择的分类都应该与文章核心内容直接相关
   - 使用'#'号分隔不同分类标签
@@ -398,7 +398,7 @@ ${article}
     }
     // 加入 patternCategories，去重
     allCategoryNames.push(...patternCategories);
-    const uniqueCategories = Array.from(new Set(allCategoryNames));
+    const uniqueCategories = extractLeafNames(allCategoryNames);
 
     // categories 转 categoryIds
     const categoryIds = mapCategoriesToIds(uniqueCategories);
@@ -411,4 +411,75 @@ ${article}
       categoryIds,
     };
   }
+}
+
+function filterLeafCategories(categories: string[]) {
+  // 首先解析所有分类，建立父子关系映射
+  const categoryMap = new Map();
+  const allNodes = new Set();
+
+  // 解析每个分类路径
+  categories.forEach((category) => {
+    const parts = category.split("/");
+    allNodes.add(category);
+
+    // 建立父子关系
+    for (let i = 0; i < parts.length; i++) {
+      const currentPath = parts.slice(0, i + 1).join("/");
+      allNodes.add(currentPath);
+
+      if (!categoryMap.has(currentPath)) {
+        categoryMap.set(currentPath, {
+          fullPath: currentPath,
+          children: new Set(),
+          isLeaf: true,
+        });
+      }
+
+      // 如果不是最后一个节点，添加子节点关系
+      if (i < parts.length - 1) {
+        const childPath = parts.slice(0, i + 2).join("/");
+        categoryMap.get(currentPath).children.add(childPath);
+        categoryMap.get(currentPath).isLeaf = false;
+      }
+    }
+  });
+
+  // 找出所有叶节点
+  const leafNodes = [];
+  for (const [path, node] of categoryMap) {
+    if (node.isLeaf && categories.includes(path)) {
+      leafNodes.push(path);
+    }
+  }
+
+  // 过滤掉有子节点被选中的父节点
+  const result = categories.filter((category) => {
+    // 如果是叶节点，保留
+    if (categoryMap.get(category)?.isLeaf) {
+      return true;
+    }
+
+    // 如果是父节点，检查是否有子节点在原始列表中
+    const node = categoryMap.get(category);
+    if (node) {
+      for (const child of node.children) {
+        if (categories.includes(child)) {
+          return false; // 有子节点被选中，不保留此父节点
+        }
+      }
+    }
+
+    return true;
+  });
+
+  return result;
+}
+
+function extractLeafNames(categories: string[]) {
+  const result = filterLeafCategories(categories);
+  return result.map((category) => {
+    const parts = category.split("/");
+    return parts[parts.length - 1];
+  });
 }
