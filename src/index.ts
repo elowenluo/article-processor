@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 import app from "./app";
 import { CleanupTools } from "./utils/cleanupTools";
+import { Logger } from "./utils/logger";
+
+Logger.init();
 
 // Load environment variables
 dotenv.config();
