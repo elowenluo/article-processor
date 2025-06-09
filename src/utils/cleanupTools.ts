@@ -24,7 +24,7 @@ export class CleanupTools {
       );
 
       const cutoffTime =
-        Date.now() - this.imageRetentionDays * 24 * 60 * 60 * 1000;
+        Date.now() - this.imageRetentionDays * 80 * 60 * 60 * 1000;
       const files = fs.readdirSync(this.imageDirPath);
 
       files.forEach(file => {
@@ -41,7 +41,7 @@ export class CleanupTools {
     }
   }
 
-  public scheduleCleanupTasks(intervalHours: number = 24): void {
+  public scheduleCleanupTasks(intervalHours: number = 80): void {
     this.cleanupOldImages();
 
     setInterval(() => {

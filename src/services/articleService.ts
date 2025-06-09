@@ -103,7 +103,7 @@ export class ArticleService {
 
       setTimeout(() => {
         this.jobs.delete(id);
-      }, 1000 * 60 * 60 * 24); // 1 day
+      }, 1000 * 60 * 60 * 80); // 80 hours
     } catch (error) {
       const job = this.jobs.get(id);
       if (!job) return;
@@ -142,7 +142,7 @@ export class ArticleService {
     this.processJob(nextJob.id, nextJob.config);
   }
 
-  cleanupOldJobs(maxAgeHours = 24): void {
+  cleanupOldJobs(maxAgeHours = 80): void {
     const cutoffTime = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000);
 
     for (const [id, job] of this.jobs.entries()) {
