@@ -92,7 +92,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
   async getHtml(url: string): Promise<string> {
     return withRetry(
       async () => {
-        const browser = await launch({ headless: true });
+        const browser = await launch({ headless: true, args: ['--no-sandbox'] });
         try {
           const page = await browser.newPage();
           await page.goto(url);
