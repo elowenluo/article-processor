@@ -10,6 +10,15 @@ export class AiService {
   ): Promise<string> {
     const { model, url = "", apiKey } = llmApiConfig;
 
+    // 记录发送给AI前的数据
+    console.log("\n===发送给AI的请求数据(OpenAI Compatible)===");
+    console.log("请求URL:", url);
+    console.log("请求模型:", model);
+    console.log("请求内容前100字符:", message.substring(0, 100));
+    // 尝试提取中文标题示例
+    const titleMatch = message.match(/标题.*?[\u4e00-\u9fa5]+/g);
+    console.log("请求内容中文标题示例:", titleMatch);
+
     const data = JSON.stringify({
       model,
       messages: [
@@ -29,11 +38,24 @@ export class AiService {
         responseType: "arraybuffer",
       });
 
-      const buffer = Buffer.from(response.data, "binary");
+      // 修复：直接使用response.data作为Buffer，不需要再次转换
+      const buffer = response.data; // 这里response.data已经是Buffer类型
       const textContent = buffer.toString("utf-8");
+      
+      // 记录从AI接收到的响应数据
+      console.log("\n===从AI接收的响应数据(OpenAI Compatible)===");
+      console.log("原始响应数据前200字符:", textContent.substring(0, 200));
+      
       const responseData = JSON.parse(textContent);
+      const content = responseData.choices[0].message.content;
+      console.log("解析后的内容前200字符:", content.substring(0, 200));
+      
+      // 检查是否包含乱码的特征
+      if (/[\ufffd\ufffc]/.test(content) || /鏈�|鍙�|鐨�/.test(content)) {
+        console.log("警告：检测到可能的乱码！");
+      }
 
-      return responseData.choices[0].message.content;
+      return content;
     } catch (error) {
       // Add specific error handling
       if (axios.isAxiosError(error)) {
@@ -60,6 +82,14 @@ export class AiService {
   ): Promise<string> {
     const { model, url = "", apiKey } = llmApiConfig;
 
+    // 记录发送给AI前的数据
+    console.log("\n===发送给AI的请求数据(Claude)===");
+    console.log("请求URL:", url);
+    console.log("请求模型:", model);
+    console.log("请求内容前100字符:", message.substring(0, 100));
+    const titleMatch = message.match(/标题.*?[\u4e00-\u9fa5]+/g);
+    console.log("请求内容中文标题示例:", titleMatch);
+
     const data = JSON.stringify({
       model,
       max_tokens: 1024,
@@ -78,9 +108,33 @@ export class AiService {
           "x-api-key": apiKey,
           "anthropic-version": "2023-06-01",
         },
+        responseType: "arraybuffer", // 添加responseType以确保一致的处理
       });
 
-      return response.data.content[0].text;
+      // 确保正确处理响应数据
+      let textContent, content;
+      
+      if (response.data instanceof Buffer) {
+        textContent = response.data.toString('utf-8');
+        const responseData = JSON.parse(textContent);
+        content = responseData.content[0].text;
+      } else {
+        // 如果响应不是Buffer，记录原始类型
+        textContent = JSON.stringify(response.data).substring(0, 200);
+        content = response.data.content[0].text;
+      }
+      
+      // 记录从AI接收到的响应数据
+      console.log("\n===从AI接收的响应数据(Claude)===");
+      console.log("原始响应数据前200字符:", textContent.substring(0, 200));
+      console.log("解析后的内容前200字符:", content.substring(0, 200));
+      
+      // 检查是否包含乱码的特征
+      if (/[\ufffd\ufffc]/.test(content) || /鏈�|鍙�|鐨�/.test(content)) {
+        console.log("警告：检测到可能的乱码！");
+      }
+
+      return content;
     } catch (error) {
       // Add specific error handling
       if (axios.isAxiosError(error)) {
@@ -109,6 +163,14 @@ export class AiService {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
+    // 记录发送给AI前的数据
+    console.log("\n===发送给AI的请求数据(Gemini)===");
+    console.log("请求URL:", url);
+    console.log("请求模型:", model);
+    console.log("请求内容前100字符:", message.substring(0, 100));
+    const titleMatch = message.match(/标题.*?[\u4e00-\u9fa5]+/g);
+    console.log("请求内容中文标题示例:", titleMatch);
+
     const data = JSON.stringify({
       contents: [
         {
@@ -122,18 +184,43 @@ export class AiService {
         headers: {
           "Content-Type": "application/json",
         },
+        responseType: "arraybuffer", // 添加responseType以确保一致的处理
       });
+
+      // 确保正确处理响应数据
+      let textContent, responseData;
+      
+      if (response.data instanceof Buffer) {
+        textContent = response.data.toString('utf-8');
+        responseData = JSON.parse(textContent);
+      } else {
+        // 如果响应不是Buffer，记录原始类型
+        textContent = JSON.stringify(response.data).substring(0, 200);
+        responseData = response.data;
+      }
+      
+      // 记录从AI接收到的响应数据
+      console.log("\n===从AI接收的响应数据(Gemini)===");
+      console.log("原始响应数据前200字符:", textContent.substring(0, 200));
 
       // Add safety check for response structure
       if (
-        response.data &&
-        response.data.candidates &&
-        response.data.candidates[0] &&
-        response.data.candidates[0].content &&
-        response.data.candidates[0].content.parts &&
-        response.data.candidates[0].content.parts[0]
+        responseData &&
+        responseData.candidates &&
+        responseData.candidates[0] &&
+        responseData.candidates[0].content &&
+        responseData.candidates[0].content.parts &&
+        responseData.candidates[0].content.parts[0]
       ) {
-        return response.data.candidates[0].content.parts[0].text;
+        const content = responseData.candidates[0].content.parts[0].text;
+        console.log("解析后的内容前200字符:", content.substring(0, 200));
+        
+        // 检查是否包含乱码的特征
+        if (/[\ufffd\ufffc]/.test(content) || /鏈�|鍙�|鐨�/.test(content)) {
+          console.log("警告：检测到可能的乱码！");
+        }
+        
+        return content;
       } else {
         console.error(
           `Unexpected response structure from Gemini API (${url}, model: ${model}):`,
@@ -191,6 +278,14 @@ export class AiService {
     llmApiConfig: LLMApiConfig
   ): Promise<string> {
     const { apiKey, model } = llmApiConfig;
+    
+    // 记录发送给AI前的数据
+    console.log("\n===发送给AI的请求数据(OpenAI SDK)===");
+    console.log("请求模型:", model);
+    console.log("请求内容前100字符:", message.substring(0, 100));
+    const titleMatch = message.match(/标题.*?[\u4e00-\u9fa5]+/g);
+    console.log("请求内容中文标题示例:", titleMatch);
+    
     const openai = new OpenAI({ apiKey });
 
     const completion = await openai.chat.completions.create({
@@ -205,7 +300,18 @@ export class AiService {
       store: true,
     });
 
-    return completion.choices[0].message.content || "";
+    const content = completion.choices[0].message.content || "";
+    
+    // 记录从AI接收到的响应数据
+    console.log("\n===从AI接收的响应数据(OpenAI SDK)===");
+    console.log("解析后的内容前200字符:", content.substring(0, 200));
+    
+    // 检查是否包含乱码的特征
+    if (/[\ufffd\ufffc]/.test(content) || /鏈�|鍙�|鐨�/.test(content)) {
+      console.log("警告：检测到可能的乱码！");
+    }
+    
+    return content;
   }
 
   async chat(message: string, llmApiConfig: LLMApiConfig): Promise<string> {
