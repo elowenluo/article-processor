@@ -215,7 +215,7 @@ export abstract class BaseArticleProcessor implements IArticleHandler {
       const response = await this.axiosInstance.get(src, {
         responseType: "arraybuffer",
       });
-      const buffer = Buffer.from(response.data, "binary");
+      const buffer = response.data;
 
       const imageName = `${Date.now()}-${Math.random()
         .toString(36)
@@ -391,7 +391,10 @@ ${article}
       for (const cat of meta.categories) {
         if (typeof cat === "string") {
           // 拆分“#”路径
-          const parts = cat.split("#").map(s => s.trim()).filter(Boolean);
+          const parts = cat
+            .split("#")
+            .map((s) => s.trim())
+            .filter(Boolean);
           allCategoryNames.push(...parts);
         }
       }
