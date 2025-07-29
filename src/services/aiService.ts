@@ -26,9 +26,13 @@ export class AiService {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
+        responseType: "arraybuffer",
       });
 
-      const responseData = response.data;
+      const buffer = Buffer.from(response.data, "binary");
+      const textContent = buffer.toString("utf-8");
+      const responseData = JSON.parse(textContent);
+
       return responseData.choices[0].message.content;
     } catch (error) {
       // Add specific error handling
@@ -146,7 +150,10 @@ export class AiService {
         );
         // Log response data if available for debugging 503s or other errors
         if (axiosError.response?.data) {
-          console.error("Gemini API Error Response Data:", axiosError.response.data);
+          console.error(
+            "Gemini API Error Response Data:",
+            axiosError.response.data
+          );
         }
         throw new Error(
           `Gemini API request failed: Status ${axiosError.response?.status}`
@@ -228,7 +235,9 @@ export class AiService {
       console.error("Error processing chat request:", error);
       // Re-throw a user-friendly error, the specific details are already logged
       throw new Error(
-        `Failed to process chat: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to process chat: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
