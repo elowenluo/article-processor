@@ -3,6 +3,7 @@ version: '3.8'
 services:
   article-processor:
     image: sisuad/article-processor:latest
+    privileged: true
     ports:
       - "3000:3000"
     environment:
