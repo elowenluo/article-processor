@@ -318,6 +318,24 @@ export class AiService {
     // Keep the outer try-catch for general errors, but specific errors are now handled inside the handlers
     try {
       const { model, url } = llmApiConfig;
+      
+      // 确保消息是有效的UTF-8编码
+      // 先检查消息是否包含乱码特征
+      if (/[\ufffd\ufffc]/.test(message) || /鏈�|鍙�|鐨�/.test(message)) {
+        console.warn("警告：检测到输入消息可能包含乱码！");
+        
+        // 尝试修复编码问题
+        try {
+          // 将消息转换为Buffer，然后重新以UTF-8解码
+          const buffer = Buffer.from(message);
+          message = buffer.toString('utf8');
+          console.log("已尝试修复消息编码");
+        } catch (encodeError) {
+          console.error("修复消息编码失败:", encodeError);
+        }
+      }
+      
+      console.log(`准备调用AI模型: ${model}, URL: ${url || "使用SDK"}`);
 
       if (url) {
         if (model.toLowerCase().includes("claude")) {
